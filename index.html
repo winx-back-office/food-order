@@ -510,7 +510,7 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
       </button>
     </div>
     <div style="text-align:center;margin-top:14px">
-      <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--c-border2)">1.1.0</span>
+      <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--c-border2)">1.1.1</span>
     </div>
   </div>
 </div>
@@ -1655,35 +1655,10 @@ async function analyzeScanImage() {
   document.getElementById("scan-footer").style.display = "none";
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1000,
-        messages: [{
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: { type: "base64", media_type: "image/jpeg", data: scanImageBase64 }
-            },
-            {
-              type: "text",
-              text: `วิเคราะห์รูปนี้แล้วหารายการอาหารและราคา ตอบกลับเป็น JSON array เท่านั้น ห้ามมีคำอธิบาย ห้ามมี backtick
-format: [{"name":"ชื่อเมนู","price":ราคาเป็นตัวเลข,"category":"หมวดหมู่ที่เหมาะสม"}]
-หมวดหมู่ให้เลือกจาก: อาหารจานเดียว, ต้ม/แกง, ทอด/ผัด, ยำ/ลาบ, เครื่องดื่ม, ของหวาน
-ถ้าไม่พบราคาให้ใส่ 0
-ถ้าไม่มีรายการอาหารในรูปให้ตอบ []`
-            }
-          ]
-        }]
-      })
-    });
-
-    const data = await res.json();
-    const text = (data.content||[]).map(c=>c.text||"").join("").trim().replace(/```json|```/g,"").trim();
-    scannedItems = JSON.parse(text);
+    // ส่งผ่าน Apps Script เพื่อหลีกเลี่ยง CORS
+    const res = await api({ action: "scanMenu", imageBase64: scanImageBase64 });
+    if (!res.ok) throw new Error(res.error || "scan failed");
+    scannedItems = res.items || [];
 
     document.getElementById("scan-loading").style.display = "none";
 
