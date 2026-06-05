@@ -408,6 +408,15 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
 .table-btn.empty  { border-style:dashed; opacity:.4; cursor:default; }
 
 /* ─────────────────────────────────────────────────────── */
+/*  PRINT — QR Codes                                      */
+@media print {
+  body > *:not(#view-admin) { display:none !important; }
+  #view-admin { display:block !important; }
+  .topbar, .tabs, .admin-body > *:not(#admin-tab-qr) { display:none !important; }
+  #admin-tab-qr { display:block !important; }
+  #qr-grid { grid-template-columns: repeat(3,1fr) !important; }
+}
+/* ─────────────────────────────────────────────────────── */
 /*  RESPONSIVE                                            */
 /* ─────────────────────────────────────────────────────── */
 @media (max-width:700px) {
@@ -464,6 +473,11 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
   <symbol id="ico-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
     <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
   </symbol>
+  <symbol id="ico-qr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+    <rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/>
+    <path d="M14 14h3v3h-3z" fill="currentColor" stroke="none"/><path d="M17 17h4"/><path d="M17 14v7"/>
+  </symbol>
   <symbol id="ico-kitchen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
     <path d="M3 11l19-9-9 19-2-8-8-2z"/>
   </symbol>
@@ -510,7 +524,7 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
       </button>
     </div>
     <div style="text-align:center;margin-top:14px">
-      <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--c-border2)">1.1.1</span>
+      <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--c-border2)">1.1.2</span>
     </div>
   </div>
 </div>
@@ -667,6 +681,12 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
         โต๊ะ
       </span>
     </button>
+    <button class="tab-btn" id="tab-qr-btn" onclick="adminTab('qr')">
+      <span style="display:inline-flex;align-items:center;gap:5px">
+        <span class="ico" style="width:13px;height:13px"><svg><use href="#ico-qr"/></svg></span>
+        QR โต๊ะ
+      </span>
+    </button>
   </div>
 
   <div class="admin-body">
@@ -765,6 +785,17 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
       </div>
       <div class="table-grid" id="tables-preview"></div>
 
+    </div>
+
+    <!-- TAB: QR CODES -->
+    <div id="admin-tab-qr" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <span style="font-size:13px;color:var(--c-muted)">QR Code ประจำโต๊ะ — ลูกค้าสแกนแล้วสั่งได้เลย</span>
+        <button onclick="printAllQR()" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;font-size:13px;font-family:var(--font-body);background:var(--c-text);color:#F5F0E8;border:none;border-radius:var(--r);cursor:pointer;white-space:nowrap;touch-action:manipulation">
+          พิมพ์ทั้งหมด
+        </button>
+      </div>
+      <div id="qr-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px"></div>
     </div>
 
     <!-- TAB: STAFF MANAGEMENT -->
@@ -878,11 +909,78 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
+<!--  VIEW: CUSTOMER ORDER                               -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="view-customer" class="view">
+  <!-- Header -->
+  <div style="background:var(--c-text);color:#F5F0E8;padding:0 18px;height:52px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--c-accent);position:sticky;top:0;z-index:100">
+    <div>
+      <div style="font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;opacity:.7">ORDER DESK</div>
+      <div style="font-size:14px;font-weight:600" id="cust-table-label">โต๊ะ —</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:11px;opacity:.6;font-family:var(--font-mono)">TABLE / โต๊ะ</div>
+      <div style="font-family:var(--font-mono);font-size:18px;font-weight:700" id="cust-table-num">—</div>
+    </div>
+  </div>
+
+  <!-- Menu -->
+  <div style="flex:1;overflow-y:auto;padding:16px" id="cust-menu-panel">
+    <div style="text-align:center;padding:40px;color:var(--c-muted);font-size:13px">กำลังโหลดเมนู...</div>
+  </div>
+
+  <!-- Cart Summary + Order Button -->
+  <div style="border-top:1px solid var(--c-border);background:var(--c-surface);padding:14px 16px">
+    <div id="cust-cart-items" style="max-height:160px;overflow-y:auto;margin-bottom:10px"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span style="font-size:13px;color:var(--c-muted)" id="cust-cart-count">0 รายการ / 0 items</span>
+      <span style="font-family:var(--font-mono);font-size:20px;font-weight:600" id="cust-cart-total">฿0</span>
+    </div>
+    <input type="text" id="cust-note" class="input" placeholder="หมายเหตุ / Special request..." style="margin-bottom:8px;font-size:13px">
+    <button id="cust-btn-order" onclick="customerSubmitOrder()" disabled
+      style="width:100%;padding:14px;font-size:15px;font-weight:600;font-family:var(--font-body);background:var(--c-accent);color:#fff;border:none;border-radius:var(--r);cursor:pointer;touch-action:manipulation;transition:opacity .15s">
+      สั่งอาหาร / Place Order
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  CUSTOMER SUCCESS VIEW                              -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="view-customer-success" class="view" style="align-items:center;justify-content:center;padding:32px;text-align:center">
+  <div style="max-width:320px">
+    <div style="width:64px;height:64px;background:#E2FEE8;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
+      <span class="ico" style="width:32px;height:32px;color:var(--c-done)"><svg><use href="#ico-check"/></svg></span>
+    </div>
+    <div style="font-size:22px;font-weight:700;margin-bottom:8px">ส่งออเดอร์แล้ว!</div>
+    <div style="font-size:14px;color:var(--c-muted);margin-bottom:4px">Order placed!</div>
+    <div style="font-family:var(--font-mono);font-size:13px;color:var(--c-muted);margin:16px 0" id="success-order-id"></div>
+    <div style="font-size:13px;color:var(--c-muted);margin-bottom:24px">ครัวได้รับออเดอร์แล้ว<br>Kitchen has received your order</div>
+    <button onclick="customerOrderAgain()"
+      style="width:100%;padding:12px;font-size:14px;font-weight:500;font-family:var(--font-body);background:var(--c-accent);color:#fff;border:none;border-radius:var(--r);cursor:pointer;touch-action:manipulation">
+      สั่งเพิ่ม / Order More
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
 <!--  JAVASCRIPT                                         -->
 <!-- ═══════════════════════════════════════════════════ -->
 <script>
 // ── CONFIG ─────────────────────────────────────────────
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOP8-jDhCng_M4SPnEO3Tcw9niAyjygQHQcA8T0V4lc8W8Ehd_rvFosy_8qEF06oZn-g/exec";
+
+// ── URL ROUTING — Customer QR ───────────────────────────
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const table  = params.get("table");
+  if (table) {
+    // ลูกค้าเปิดจาก QR → ไปหน้า customer โดยตรง
+    document.addEventListener("DOMContentLoaded", () => {
+      initCustomerView(table);
+    });
+  }
+})();
 
 // ── STATE ───────────────────────────────────────────────
 let currentUser  = null;
@@ -1239,13 +1337,14 @@ function stopKitchenTimer() {
 
 // ── ADMIN ────────────────────────────────────────────────
 function adminTab(tab) {
-  ["menu","orders","staff","tables"].forEach(t => {
+  ["menu","orders","staff","tables","qr"].forEach(t => {
     document.getElementById("admin-tab-"+t).style.display = tab===t?"block":"none";
     document.getElementById("tab-"+t+"-btn").classList.toggle("active", tab===t);
   });
   if (tab === "orders") loadAdminOrders();
   if (tab === "staff")  loadAdminStaff();
   if (tab === "tables") renderTablesAdmin();
+  if (tab === "qr")     renderQRGrid();
 }
 
 async function loadAdminMenu() {
@@ -1749,6 +1848,181 @@ function removeCategory(idx) {
   if (inUse) { toast(`"${cat}" ยังใช้งานอยู่ — ไม่สามารถลบได้`,"error"); return; }
   CATEGORIES.splice(idx, 1);
   renderCatTags();
+}
+
+
+// ── CUSTOMER VIEW ─────────────────────────────────────────
+let custCart  = {};   // id → qty
+let custTable = "";
+let custMenuItems = [];
+
+async function initCustomerView(table) {
+  custTable = table;
+  custCart  = {};
+  document.getElementById("cust-table-label").textContent = "โต๊ะ " + table;
+  document.getElementById("cust-table-num").textContent   = table;
+  showView("customer");
+  // Load menu
+  try {
+    const res = await api({action:"getMenu"});
+    if (res.ok) { custMenuItems = res.items; renderCustMenu(); }
+  } catch(e) {
+    document.getElementById("cust-menu-panel").innerHTML =
+      '<div style="text-align:center;padding:40px;color:var(--c-muted)">โหลดเมนูไม่ได้ กรุณารีเฟรช<br>Cannot load menu. Please refresh.</div>';
+  }
+}
+
+function renderCustMenu() {
+  const panel = document.getElementById("cust-menu-panel");
+  const cats  = [...new Set(custMenuItems.map(m => m.category))];
+  let html = "";
+  cats.forEach(cat => {
+    const items = custMenuItems.filter(m => m.category === cat);
+    html += `<div style="margin-bottom:20px">
+      <div style="font-size:11px;font-weight:500;letter-spacing:.1em;color:var(--c-muted);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+        ${cat}<span style="flex:1;height:1px;background:var(--c-border);display:inline-block"></span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">`;
+    items.forEach(item => {
+      const qty = custCart[item.id] || 0;
+      html += `<div style="background:var(--c-surface);border:1.5px solid ${qty>0?'var(--c-accent)':'var(--c-border)'};border-radius:var(--r);padding:12px;position:relative;transition:border-color .15s">
+        ${qty>0?`<div style="position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:50%;background:var(--c-accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono)">${qty}</div>`:""}
+        <div style="font-size:14px;font-weight:500;line-height:1.3;margin-bottom:6px;padding-right:${qty>0?'20px':'0'}">${item.name}</div>
+        <div style="font-family:var(--font-mono);font-size:13px;color:var(--c-accent);font-weight:500;margin-bottom:8px">฿${item.price}</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          ${qty>0?`<button onclick="custChangeQty('${item.id}',-1)" style="width:26px;height:26px;border-radius:4px;border:1px solid var(--c-border2);background:transparent;font-size:16px;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;justify-content:center">−</button>
+          <span style="font-family:var(--font-mono);font-size:13px;font-weight:600;min-width:16px;text-align:center">${qty}</span>`:""}
+          <button onclick="custChangeQty('${item.id}',1)" style="flex:1;padding:5px;border-radius:4px;border:none;background:${qty>0?'var(--c-accent)':'var(--c-bg)'};color:${qty>0?'#fff':'var(--c-text)'};font-size:13px;cursor:pointer;touch-action:manipulation;font-family:var(--font-body);font-weight:500">
+            ${qty>0?'เพิ่ม / Add':'+ สั่ง / Order'}
+          </button>
+        </div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  panel.innerHTML = html;
+}
+
+function custChangeQty(id, delta) {
+  custCart[id] = (custCart[id] || 0) + delta;
+  if (custCart[id] <= 0) delete custCart[id];
+  renderCustMenu();
+  renderCustCart();
+}
+
+function renderCustCart() {
+  const el    = document.getElementById("cust-cart-items");
+  const total = document.getElementById("cust-cart-total");
+  const count = document.getElementById("cust-cart-count");
+  const btn   = document.getElementById("cust-btn-order");
+  const empty = Object.keys(custCart).length === 0;
+
+  if (empty) {
+    el.innerHTML = "";
+    total.textContent = "฿0";
+    count.textContent = "0 รายการ / 0 items";
+    btn.disabled = true; btn.style.opacity = ".4";
+    return;
+  }
+
+  let sum = 0; let rows = "";
+  Object.entries(custCart).forEach(([id, qty]) => {
+    const item = custMenuItems.find(m => m.id === id);
+    if (!item) return;
+    const sub = item.price * qty;
+    sum += sub;
+    rows += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;border-bottom:1px dotted var(--c-border)">
+      <span>${item.name} <span style="color:var(--c-muted)">x${qty}</span></span>
+      <span style="font-family:var(--font-mono);font-size:12px">฿${sub}</span>
+    </div>`;
+  });
+  el.innerHTML = rows;
+  const cnt = Object.values(custCart).reduce((a,b)=>a+b,0);
+  total.textContent = "฿" + sum.toLocaleString();
+  count.textContent = cnt + " รายการ / " + cnt + " items";
+  btn.disabled = false; btn.style.opacity = "1";
+}
+
+async function customerSubmitOrder() {
+  const items = Object.entries(custCart).map(([id,qty]) => {
+    const m = custMenuItems.find(m=>m.id===id);
+    return {id, name:m.name, price:m.price, qty};
+  });
+  if (!items.length) return;
+
+  // Confirm dialog (bilingual)
+  const total = items.reduce((s,i)=>s+i.price*i.qty,0);
+  const itemList = items.map(i=>`${i.name} x${i.qty}`).join(", ");
+  const confirmed = confirm(
+    "ยืนยันการสั่งอาหาร / Confirm Order
+
+" +
+    "โต๊ะ / Table: " + custTable + "
+" +
+    itemList + "
+
+" +
+    "รวม / Total: ฿" + total.toLocaleString()
+  );
+  if (!confirmed) return;
+
+  const btn = document.getElementById("cust-btn-order");
+  btn.disabled = true; btn.textContent = "กำลังส่ง... / Sending...";
+
+  const note = document.getElementById("cust-note").value;
+  try {
+    const res = await api({action:"submitOrder", tableNo:custTable, staffName:"[ลูกค้า]", items, note});
+    if (res.ok) {
+      document.getElementById("success-order-id").textContent = res.orderId;
+      showView("customer-success");
+    } else {
+      alert("ส่งออเดอร์ไม่สำเร็จ / Order failed: " + (res.error||""));
+    }
+  } catch(e) {
+    alert("เกิดข้อผิดพลาด กรุณาลองใหม่
+Error occurred. Please try again.");
+  }
+  btn.disabled = false;
+  btn.textContent = "สั่งอาหาร / Place Order";
+}
+
+function customerOrderAgain() {
+  custCart = {};
+  renderCustMenu();
+  renderCustCart();
+  document.getElementById("cust-note").value = "";
+  showView("customer");
+}
+
+// ── QR CODE GENERATOR ─────────────────────────────────────
+function renderQRGrid() {
+  const grid = document.getElementById("qr-grid");
+  if (!tableList.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--c-muted);font-size:13px">ยังไม่มีโต๊ะ — ไปแท็บ "โต๊ะ" เพื่อเพิ่มก่อน</div>';
+    return;
+  }
+  const base = window.location.origin + window.location.pathname;
+  grid.innerHTML = tableList.map(t => {
+    const url = base + "?table=" + encodeURIComponent(t);
+    const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" + encodeURIComponent(url);
+    return `<div style="background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r);padding:14px;text-align:center">
+      <img src="${qrUrl}" style="width:120px;height:120px;margin-bottom:8px" loading="lazy">
+      <div style="font-family:var(--font-mono);font-size:15px;font-weight:600;margin-bottom:4px">โต๊ะ ${t}</div>
+      <div style="font-size:10px;color:var(--c-muted);word-break:break-all;line-height:1.4;margin-bottom:8px">${url}</div>
+      <button onclick="testQR('${t}')"
+        style="font-size:11px;padding:4px 10px;background:transparent;border:1px solid var(--c-border2);border-radius:4px;cursor:pointer;color:var(--c-muted);touch-action:manipulation">
+        ทดสอบ / Test
+      </button>
+    </div>`;
+  }).join("");
+}
+
+function testQR(table) {
+  initCustomerView(table);
+}
+
+function printAllQR() {
+  window.print();
 }
 
 // (demo notice removed)
