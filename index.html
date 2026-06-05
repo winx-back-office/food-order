@@ -510,7 +510,7 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
       </button>
     </div>
     <div style="text-align:center;margin-top:14px">
-      <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--c-border2)">1.0.9</span>
+      <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--c-border2)">1.1.0</span>
     </div>
   </div>
 </div>
@@ -819,18 +819,29 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
     <div class="modal-body">
 
       <!-- Upload area -->
-      <div id="scan-upload-area"
-        style="border:2px dashed var(--c-border2);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer;transition:border-color .15s;margin-bottom:14px"
-        onclick="document.getElementById('scan-file-input').click()"
-        ondragover="event.preventDefault();this.style.borderColor='var(--c-cooking)'"
-        ondragleave="this.style.borderColor='var(--c-border2)'"
-        ondrop="handleScanDrop(event)">
-        <div style="margin-bottom:8px">
-          <span class="ico" style="width:32px;height:32px;color:var(--c-muted);display:inline-flex"><svg><use href="#ico-camera"/></svg></span>
+      <div id="scan-upload-area" style="margin-bottom:14px">
+        <!-- ปุ่ม 2 ตัว -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <button onclick="document.getElementById('scan-file-camera').click()"
+            style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 10px;border:1.5px dashed var(--c-border2);border-radius:var(--r);background:var(--c-surface);cursor:pointer;touch-action:manipulation;transition:border-color .15s"
+            onmouseenter="this.style.borderColor='var(--c-cooking)'" onmouseleave="this.style.borderColor='var(--c-border2)'">
+            <span class="ico" style="width:28px;height:28px;color:var(--c-cooking)"><svg><use href="#ico-camera"/></svg></span>
+            <span style="font-size:13px;font-weight:500">ถ่ายรูป</span>
+            <span style="font-size:11px;color:var(--c-muted)">เปิดกล้อง</span>
+          </button>
+          <button onclick="document.getElementById('scan-file-gallery').click()"
+            style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 10px;border:1.5px dashed var(--c-border2);border-radius:var(--r);background:var(--c-surface);cursor:pointer;touch-action:manipulation;transition:border-color .15s"
+            onmouseenter="this.style.borderColor='var(--c-accent)'" onmouseleave="this.style.borderColor='var(--c-border2)'">
+            <span class="ico" style="width:28px;height:28px;color:var(--c-accent)"><svg><use href="#ico-note"/></svg></span>
+            <span style="font-size:13px;font-weight:500">เลือกไฟล์</span>
+            <span style="font-size:11px;color:var(--c-muted)">จากเครื่อง</span>
+          </button>
         </div>
-        <div style="font-size:14px;font-weight:500;margin-bottom:4px">แตะเพื่อเลือกรูป หรือถ่ายใหม่</div>
-        <div style="font-size:12px;color:var(--c-muted)">รองรับ JPG, PNG — รูปเมนู, กระดาน, ป้ายราคา</div>
-        <input type="file" id="scan-file-input" accept="image/*" capture="environment"
+        <div style="text-align:center;font-size:11px;color:var(--c-muted)">รองรับ JPG, PNG — รูปเมนู, กระดาน, ป้ายราคา</div>
+        <!-- hidden inputs -->
+        <input type="file" id="scan-file-camera" accept="image/*" capture="environment"
+          style="display:none" onchange="handleScanFile(this.files[0])">
+        <input type="file" id="scan-file-gallery" accept="image/*"
           style="display:none" onchange="handleScanFile(this.files[0])">
       </div>
 
@@ -1610,7 +1621,8 @@ function clearScanImage() {
   document.getElementById("scan-upload-area").style.display = "block";
   document.getElementById("scan-result-wrap").style.display = "none";
   document.getElementById("scan-footer").style.display = "none";
-  document.getElementById("scan-file-input").value = "";
+  document.getElementById("scan-file-camera").value = "";
+  document.getElementById("scan-file-gallery").value = "";
 }
 
 function handleScanDrop(e) {
