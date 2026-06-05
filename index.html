@@ -506,7 +506,7 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
       </button>
     </div>
     <div style="text-align:center;margin-top:14px">
-      <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--c-border2)">1.0.4</span>
+      <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--c-border2)">1.0.5</span>
     </div>
   </div>
 </div>
@@ -733,36 +733,44 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
 
     <!-- TAB: TABLE MANAGEMENT -->
     <div id="admin-tab-tables" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px;gap:6px">
-        <button onclick="addTableRow()"
-          style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;font-size:13px;font-family:var(--font-body);border:1px solid var(--c-border2);background:transparent;border-radius:var(--r);cursor:pointer;color:var(--c-text);white-space:nowrap">
-          <span class="ico" style="width:13px;height:13px"><svg><use href="#ico-plus"/></svg></span>
-          เพิ่มโต๊ะ
-        </button>
+
+      <!-- สร้างโต๊ะด่วน -->
+      <div class="card" style="padding:16px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:500;letter-spacing:.06em;color:var(--c-muted);margin-bottom:10px">สร้างโต๊ะอัตโนมัติ</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px">
+            <label style="font-size:13px;color:var(--c-muted);white-space:nowrap">จำนวนโต๊ะ</label>
+            <input type="number" id="gen-table-count" class="input" value="10" min="1" max="99"
+              style="width:72px;font-family:var(--font-mono);font-size:15px;font-weight:500;text-align:center">
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <label style="font-size:13px;color:var(--c-muted);white-space:nowrap">เริ่มจาก</label>
+            <input type="number" id="gen-table-start" class="input" value="1" min="1" max="99"
+              style="width:64px;font-family:var(--font-mono);font-size:15px;font-weight:500;text-align:center">
+          </div>
+          <button onclick="generateTables()"
+            style="display:inline-flex;align-items:center;gap:5px;padding:8px 14px;font-size:13px;font-family:var(--font-body);background:var(--c-text);color:#F5F0E8;border:none;border-radius:var(--r);cursor:pointer;white-space:nowrap;touch-action:manipulation">
+            <span class="ico" style="width:13px;height:13px"><svg><use href="#ico-plus"/></svg></span>
+            สร้าง
+          </button>
+          <button onclick="clearTables()"
+            style="display:inline-flex;align-items:center;gap:5px;padding:8px 14px;font-size:13px;font-family:var(--font-body);background:transparent;border:1px solid var(--c-border2);border-radius:var(--r);cursor:pointer;color:var(--c-red);white-space:nowrap;touch-action:manipulation">
+            ล้างทั้งหมด
+          </button>
+        </div>
+      </div>
+
+      <!-- Preview + จัดการรายชื่อ -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:500;letter-spacing:.06em;color:var(--c-muted)" id="tables-count-label">0 โต๊ะ</div>
         <button onclick="saveTables()"
-          style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;font-size:13px;font-family:var(--font-body);background:var(--c-accent);color:#fff;border:none;border-radius:var(--r);cursor:pointer;white-space:nowrap">
+          style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;font-size:13px;font-family:var(--font-body);background:var(--c-accent);color:#fff;border:none;border-radius:var(--r);cursor:pointer;white-space:nowrap;touch-action:manipulation">
           <span class="ico" style="width:13px;height:13px"><svg><use href="#ico-save"/></svg></span>
           บันทึก
         </button>
       </div>
-      <div style="margin-bottom:14px;font-size:13px;color:var(--c-muted)">ชื่อโต๊ะที่กำหนดจะแสดงใน grid ให้พนักงานเลือก</div>
-      <div class="card" style="overflow-x:auto">
-        <table class="menu-table">
-          <thead>
-            <tr>
-              <th style="width:36px"></th>
-              <th>ชื่อโต๊ะ</th>
-              <th style="width:36px"></th>
-            </tr>
-          </thead>
-          <tbody id="tables-edit-body"></tbody>
-        </table>
-      </div>
-      <!-- Preview -->
-      <div style="margin-top:16px">
-        <div style="font-size:11px;font-weight:500;letter-spacing:.08em;color:var(--c-muted);margin-bottom:8px">PREVIEW</div>
-        <div class="table-grid" id="tables-preview" style="max-width:300px"></div>
-      </div>
+      <div class="table-grid" id="tables-preview"></div>
+
     </div>
 
     <!-- TAB: STAFF MANAGEMENT -->
@@ -1429,68 +1437,65 @@ function selectTable(name) {
 let editTables = [];
 
 function renderTablesAdmin() {
-  // Load from API then render
   api({action:"getTables"}).then(res => {
     editTables = res.ok ? [...(res.tables||[])] : [];
-    renderTablesEditTable();
     renderTablesPreview();
-  }).catch(() => { editTables = []; renderTablesEditTable(); });
-}
-
-function renderTablesEditTable() {
-  const tbody = document.getElementById("tables-edit-body");
-  tbody.innerHTML = editTables.map((t,i) => `
-    <tr>
-      <td style="color:var(--c-muted);font-size:12px;font-family:var(--font-mono);padding-left:12px">${i+1}</td>
-      <td><input class="input" value="${t}" oninput="editTableRow(${i},this.value)" placeholder="ชื่อโต๊ะ" style="min-width:120px"></td>
-      <td>
-        <button class="btn-del-row" onclick="deleteTableRow(${i})" title="ลบ">
-          <span class="ico" style="width:15px;height:15px"><svg><use href="#ico-trash"/></svg></span>
-        </button>
-      </td>
-    </tr>`).join("");
-  renderTablesPreview();
+  }).catch(() => { editTables = []; renderTablesPreview(); });
 }
 
 function renderTablesPreview() {
-  const el = document.getElementById("tables-preview");
+  const el    = document.getElementById("tables-preview");
+  const label = document.getElementById("tables-count-label");
   if (!el) return;
+  if (label) label.textContent = editTables.length + " โต๊ะ";
   el.innerHTML = editTables.length
-    ? editTables.map(t => `<div class="table-btn" style="cursor:default">${t}</div>`).join("")
-    : '<div style="font-size:12px;color:var(--c-muted)">ยังไม่มีโต๊ะ</div>';
+    ? editTables.map((t,i) => `
+        <div style="position:relative">
+          <div class="table-btn" style="font-size:13px">${t}</div>
+          <button onclick="deleteTableItem(${i})"
+            style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--c-red);color:#fff;border:none;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;line-height:1;touch-action:manipulation">×</button>
+        </div>`).join("")
+    : '<div style="grid-column:1/-1;font-size:13px;color:var(--c-muted);padding:12px 0">ยังไม่มีโต๊ะ — กรอกจำนวนแล้วกด สร้าง</div>';
 }
 
-function editTableRow(idx, val) {
-  editTables[idx] = val;
+function generateTables() {
+  const count = parseInt(document.getElementById("gen-table-count").value) || 0;
+  const start = parseInt(document.getElementById("gen-table-start").value) || 1;
+  if (count < 1 || count > 99) { toast("จำนวนโต๊ะต้องอยู่ระหว่าง 1-99","error"); return; }
+  const newTables = [];
+  for (let i = 0; i < count; i++) newTables.push(String(start + i));
+  // merge โดยไม่ซ้ำ
+  const merged = [...new Set([...editTables, ...newTables])];
+  // sort เป็นตัวเลข
+  merged.sort((a,b) => {
+    const na = parseInt(a), nb = parseInt(b);
+    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    return a.localeCompare(b, 'th');
+  });
+  editTables = merged;
   renderTablesPreview();
 }
 
-function deleteTableRow(idx) {
-  editTables.splice(idx,1);
-  renderTablesEditTable();
+function clearTables() {
+  if (!editTables.length) return;
+  editTables = [];
+  renderTablesPreview();
 }
 
-function addTableRow() {
-  editTables.push("");
-  renderTablesEditTable();
-  document.querySelector(".admin-body").scrollTo({top:99999,behavior:"smooth"});
-  // focus last input
-  setTimeout(() => {
-    const inputs = document.querySelectorAll("#tables-edit-body input");
-    if (inputs.length) inputs[inputs.length-1].focus();
-  }, 50);
+function deleteTableItem(idx) {
+  editTables.splice(idx,1);
+  renderTablesPreview();
 }
 
 async function saveTables() {
-  const valid = editTables.map(t=>t.trim()).filter(Boolean);
-  if (new Set(valid).size !== valid.length) { toast("ชื่อโต๊ะซ้ำกัน","error"); return; }
+  const valid = editTables.map(t=>String(t).trim()).filter(Boolean);
   try {
     const res = await api({action:"saveTables", tables:valid});
     if (res.ok) {
       editTables = valid;
-      tableList  = valid; // sync to picker
-      toast("บันทึกโต๊ะสำเร็จ!");
-      renderTablesEditTable();
+      tableList  = valid;
+      toast("บันทึกโต๊ะสำเร็จ! (" + valid.length + " โต๊ะ)");
+      renderTablesPreview();
     } else toast(res.error||"บันทึกไม่สำเร็จ","error");
   } catch(e) { toast("เกิดข้อผิดพลาด","error"); }
 }
