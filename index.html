@@ -516,7 +516,7 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
       </button>
     </div>
     <div style="text-align:center;margin-top:14px">
-      <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--c-accent)">1.1.9</span>
+      <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--c-accent)">1.2.0</span>
     </div>
   </div>
 </div>
@@ -1426,7 +1426,10 @@ function renderQRGrid() {
       html += "<div style='background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r);padding:14px;text-align:center'>";
       html += "<img src='" + qrUrl + "' style='width:120px;height:120px;margin-bottom:8px' loading='lazy'>";
       html += "<div style='font-family:var(--font-mono);font-size:15px;font-weight:600;margin-bottom:8px'>โต๊ะ " + t + "</div>";
-      html += "<button onclick='testQR(\"" + t + "\")' style='font-size:11px;padding:4px 10px;background:transparent;border:1px solid var(--c-border2);border-radius:4px;cursor:pointer;touch-action:manipulation'>ทดสอบ</button>";
+      html += "<div style='display:flex;gap:6px;justify-content:center'>";
+      html += "<button onclick='testQR(\"" + t + "\")' style='font-size:11px;padding:4px 8px;background:transparent;border:1px solid var(--c-border2);border-radius:4px;cursor:pointer;touch-action:manipulation;color:var(--c-muted)'>ทดสอบ</button>";
+      html += "<button onclick='printSingleQR(\"" + t + "\")' style='font-size:11px;padding:4px 8px;background:var(--c-text);color:#F5F0E8;border:none;border-radius:4px;cursor:pointer;touch-action:manipulation'>พิมพ์</button>";
+      html += "</div>";
       html += "</div>";
     });
     grid.innerHTML = html;
@@ -1435,7 +1438,36 @@ function renderQRGrid() {
   });
 }
 function testQR(table) { initCustomerView(table); }
-function printAllQR()  { window.print(); }
+function printAllQR() { window.print(); }
+
+function printSingleQR(table) {
+  var base   = window.location.origin + window.location.pathname;
+  var url    = base + "?table=" + encodeURIComponent(table);
+  var qrUrl  = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(url);
+  var win    = window.open("", "_blank", "width=400,height=500");
+  win.document.write(
+    "<!DOCTYPE html><html><head><meta charset=UTF-8>"
+    + "<title>QR โต๊ะ " + table + "</title>"
+    + "<style>"
+    + "body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'Courier New',monospace;background:#fff}"
+    + ".card{text-align:center;padding:32px;border:2px solid #1C1A17;border-radius:12px;width:280px}"
+    + ".brand{font-size:11px;letter-spacing:.18em;color:#7A7268;margin-bottom:4px}"
+    + ".table-num{font-size:36px;font-weight:700;margin:8px 0 16px}"
+    + ".qr img{width:220px;height:220px}"
+    + ".hint{font-size:11px;color:#7A7268;margin-top:12px;line-height:1.5}"
+    + "@media print{body{min-height:auto}.card{border:2px solid #000}}"
+    + "</style></head><body>"
+    + "<div class=card>"
+    + "<div class=brand>ORDER DESK</div>"
+    + "<div class=table-num>โต๊ะ " + table + "</div>"
+    + "<div class=qr><img src='" + qrUrl + "' alt='QR Code'></div>"
+    + "<div class=hint>สแกน QR เพื่อสั่งอาหาร<br>Scan to order</div>"
+    + "</div>"
+    + "<script>window.onload=function(){window.print();}<\/script>"
+    + "</body></html>"
+  );
+  win.document.close();
+}
 
 // ── CUSTOMER VIEW ─────────────────────────────────────────
 var custCart = {};
