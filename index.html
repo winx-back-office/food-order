@@ -355,6 +355,56 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
 .summary-lbl { font-size:11px; color:var(--c-muted); letter-spacing:.06em; margin-top:2px; }
 
 /* ─────────────────────────────────────────────────────── */
+/*  TABLE PICKER                                          */
+.table-selected-btn {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 14px; border-radius:var(--r);
+  border:1.5px solid var(--c-border2); background:var(--c-surface);
+  cursor:pointer; font-family:var(--font-body); font-size:14px;
+  color:var(--c-text); transition:all .15s; min-width:120px;
+}
+.table-selected-btn.selected { border-color:var(--c-accent); background:#FEF8F4; color:var(--c-accent); font-weight:600; }
+.table-selected-btn:hover { border-color:var(--c-accent2); }
+
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(28,26,23,.5);
+  z-index:500; display:flex; align-items:flex-end; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity .2s;
+}
+.modal-overlay.open { opacity:1; pointer-events:all; }
+.modal-sheet {
+  background:var(--c-surface); border-radius:14px 14px 0 0;
+  width:100%; max-width:480px; max-height:80vh;
+  display:flex; flex-direction:column;
+  transform:translateY(20px); transition:transform .2s;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.modal-overlay.open .modal-sheet { transform:translateY(0); }
+.modal-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 18px 12px; border-bottom:1px solid var(--c-border);
+}
+.modal-title { font-size:15px; font-weight:600; }
+.modal-close {
+  width:28px; height:28px; border-radius:50%; border:none;
+  background:var(--c-bg); cursor:pointer; font-size:18px; color:var(--c-muted);
+  display:flex; align-items:center; justify-content:center;
+}
+.modal-body { overflow-y:auto; padding:16px 18px 20px; }
+
+.table-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.table-btn {
+  aspect-ratio:1; border-radius:var(--r); border:1.5px solid var(--c-border);
+  background:var(--c-surface); cursor:pointer;
+  font-family:var(--font-mono); font-size:15px; font-weight:500;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .15s; color:var(--c-text);
+}
+.table-btn:hover  { border-color:var(--c-accent2); background:#FEF8F4; }
+.table-btn.active { border-color:var(--c-accent); background:var(--c-accent); color:#fff; }
+.table-btn.empty  { border-style:dashed; opacity:.4; cursor:default; }
+
+/* ─────────────────────────────────────────────────────── */
 /*  RESPONSIVE                                            */
 /* ─────────────────────────────────────────────────────── */
 @media (max-width:700px) {
@@ -476,13 +526,27 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
 
   <!-- TABLE BAR -->
   <div class="table-bar">
-    <span class="ico" style="width:16px;height:16px;color:var(--c-muted)"><svg><use href="#ico-table"/></svg></span>
-    <label>โต๊ะที่</label>
-    <input type="text" class="input" id="table-no" placeholder="เช่น A1, 5" maxlength="6">
+    <button class="table-selected-btn" id="table-select-btn" onclick="openTablePicker()">
+      <span class="ico" style="width:15px;height:15px;color:var(--c-muted)"><svg><use href="#ico-table"/></svg></span>
+      <span id="table-select-label">เลือกโต๊ะ</span>
+    </button>
     <button class="btn btn-secondary btn-sm" onclick="showView('kitchen')" style="margin-left:auto">
       <span class="ico" style="width:14px;height:14px"><svg><use href="#ico-fire"/></svg></span>
       ครัว
     </button>
+  </div>
+
+  <!-- TABLE PICKER MODAL -->
+  <div class="modal-overlay" id="table-modal" onclick="closeTablePicker(event)">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <span class="modal-title">เลือกโต๊ะ</span>
+        <button class="modal-close" onclick="closeTablePicker()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="table-grid" id="table-grid"></div>
+      </div>
+    </div>
   </div>
 
   <div class="order-layout">
@@ -588,6 +652,12 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
         พนักงาน
       </span>
     </button>
+    <button class="tab-btn" id="tab-tables-btn" onclick="adminTab('tables')">
+      <span style="display:inline-flex;align-items:center;gap:5px">
+        <span class="ico" style="width:13px;height:13px"><svg><use href="#ico-table"/></svg></span>
+        โต๊ะ
+      </span>
+    </button>
   </div>
 
   <div class="admin-body">
@@ -653,6 +723,40 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
           </thead>
           <tbody id="admin-orders-body"></tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- TAB: TABLE MANAGEMENT -->
+    <div id="admin-tab-tables" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px;gap:6px">
+        <button onclick="addTableRow()"
+          style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;font-size:13px;font-family:var(--font-body);border:1px solid var(--c-border2);background:transparent;border-radius:var(--r);cursor:pointer;color:var(--c-text);white-space:nowrap">
+          <span class="ico" style="width:13px;height:13px"><svg><use href="#ico-plus"/></svg></span>
+          เพิ่มโต๊ะ
+        </button>
+        <button onclick="saveTables()"
+          style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;font-size:13px;font-family:var(--font-body);background:var(--c-accent);color:#fff;border:none;border-radius:var(--r);cursor:pointer;white-space:nowrap">
+          <span class="ico" style="width:13px;height:13px"><svg><use href="#ico-save"/></svg></span>
+          บันทึก
+        </button>
+      </div>
+      <div style="margin-bottom:14px;font-size:13px;color:var(--c-muted)">ชื่อโต๊ะที่กำหนดจะแสดงใน grid ให้พนักงานเลือก</div>
+      <div class="card" style="overflow-x:auto">
+        <table class="menu-table">
+          <thead>
+            <tr>
+              <th style="width:36px"></th>
+              <th>ชื่อโต๊ะ</th>
+              <th style="width:36px"></th>
+            </tr>
+          </thead>
+          <tbody id="tables-edit-body"></tbody>
+        </table>
+      </div>
+      <!-- Preview -->
+      <div style="margin-top:16px">
+        <div style="font-size:11px;font-weight:500;letter-spacing:.08em;color:var(--c-muted);margin-bottom:8px">PREVIEW</div>
+        <div class="table-grid" id="tables-preview" style="max-width:300px"></div>
       </div>
     </div>
 
@@ -729,6 +833,7 @@ async function api(payload) {
 // ── MOCK (demo mode when URL is empty) ──────────────────
 function mockApi(payload) {
   const delay = ms => new Promise(r => setTimeout(r, ms));
+  const MOCK_TABLES = ["A1","A2","A3","A4","B1","B2","B3","B4","C1","C2","VIP1","VIP2"];
   const MOCK_STAFF = [
     {name:"ต้น",   pin:"1111", role:"staff"},
     {name:"แนน",   pin:"2222", role:"staff"},
@@ -758,6 +863,8 @@ function mockApi(payload) {
       case "getMenu":      return {ok:true,items:MOCK_MENU.filter(m=>m.active)};
       case "getMenuAdmin": return {ok:true,items:MOCK_MENU};
       case "saveMenu":     return {ok:true};
+      case "getTables":    return {ok:true, tables: MOCK_TABLES};
+      case "saveTables":   { MOCK_TABLES.length=0; (payload.tables||[]).forEach(t=>MOCK_TABLES.push(t)); return {ok:true}; }
       case "getStaff":     return {ok:true,staff:MOCK_STAFF.map(s=>({...s}))};
       case "saveStaff": {
         MOCK_STAFF.length = 0;
@@ -799,7 +906,7 @@ function showView(name) {
   document.getElementById("view-"+name).classList.add("active");
   if (name === "kitchen") startKitchenTimer();
   else stopKitchenTimer();
-  if (name === "order") loadMenu();
+  if (name === "order") { loadMenu(); loadTables(); selectedTable=""; document.getElementById("table-select-btn").classList.remove("selected"); document.getElementById("table-select-label").textContent="เลือกโต๊ะ"; }
   if (name === "admin") { adminTab("menu"); loadAdminMenu(); renderCatTags(); }
 }
 
@@ -933,8 +1040,8 @@ function renderCart() {
 }
 
 async function submitOrder() {
-  const tableNo = document.getElementById("table-no").value.trim();
-  if (!tableNo) { toast("กรุณาใส่หมายเลขโต๊ะ","error"); return; }
+  const tableNo = selectedTable;
+  if (!tableNo) { toast("กรุณาเลือกโต๊ะก่อน","error"); return; }
   if (Object.keys(cart).length === 0) return;
 
   const btn = document.getElementById("btn-submit-order");
@@ -1047,14 +1154,13 @@ function stopKitchenTimer() {
 
 // ── ADMIN ────────────────────────────────────────────────
 function adminTab(tab) {
-  document.getElementById("admin-tab-menu").style.display   = tab==="menu"  ?"block":"none";
-  document.getElementById("admin-tab-orders").style.display = tab==="orders"?"block":"none";
-  document.getElementById("admin-tab-staff").style.display  = tab==="staff" ?"block":"none";
-  document.getElementById("tab-menu-btn").classList.toggle("active",   tab==="menu");
-  document.getElementById("tab-orders-btn").classList.toggle("active", tab==="orders");
-  document.getElementById("tab-staff-btn").classList.toggle("active",  tab==="staff");
+  ["menu","orders","staff","tables"].forEach(t => {
+    document.getElementById("admin-tab-"+t).style.display = tab===t?"block":"none";
+    document.getElementById("tab-"+t+"-btn").classList.toggle("active", tab===t);
+  });
   if (tab === "orders") loadAdminOrders();
   if (tab === "staff")  loadAdminStaff();
+  if (tab === "tables") renderTablesAdmin();
 }
 
 async function loadAdminMenu() {
@@ -1271,6 +1377,122 @@ async function saveStaff() {
 }
 
 
+
+
+// ── TABLE PICKER ──────────────────────────────────────────
+let selectedTable = "";
+let tableList     = []; // loaded from API
+
+async function loadTables() {
+  try {
+    const res = await api({action:"getTables"});
+    if (res.ok) tableList = res.tables || [];
+  } catch(e) { tableList = []; }
+}
+
+function openTablePicker() {
+  renderTableGrid();
+  document.getElementById("table-modal").classList.add("open");
+}
+
+function closeTablePicker(e) {
+  if (e && e.target !== document.getElementById("table-modal")) return;
+  document.getElementById("table-modal").classList.remove("open");
+}
+
+function renderTableGrid() {
+  const grid = document.getElementById("table-grid");
+  if (!tableList.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--c-muted);font-size:13px">ยังไม่มีโต๊ะ — Admin กำหนดได้ที่แท็บ "โต๊ะ"</div>';
+    return;
+  }
+  grid.innerHTML = tableList.map(t => `
+    <button class="table-btn ${t===selectedTable?'active':''}" onclick="selectTable('${t}')">
+      ${t}
+    </button>`).join("");
+}
+
+function selectTable(name) {
+  selectedTable = name;
+  const btn   = document.getElementById("table-select-btn");
+  const label = document.getElementById("table-select-label");
+  btn.classList.add("selected");
+  label.textContent = "โต๊ะ " + name;
+  document.getElementById("table-modal").classList.remove("open");
+  // enable submit if cart has items
+  const hasItems = Object.keys(cart).length > 0;
+  document.getElementById("btn-submit-order").disabled = !hasItems;
+}
+
+// ── ADMIN: TABLE MANAGEMENT ───────────────────────────────
+let editTables = [];
+
+function renderTablesAdmin() {
+  // Load from API then render
+  api({action:"getTables"}).then(res => {
+    editTables = res.ok ? [...(res.tables||[])] : [];
+    renderTablesEditTable();
+    renderTablesPreview();
+  }).catch(() => { editTables = []; renderTablesEditTable(); });
+}
+
+function renderTablesEditTable() {
+  const tbody = document.getElementById("tables-edit-body");
+  tbody.innerHTML = editTables.map((t,i) => `
+    <tr>
+      <td style="color:var(--c-muted);font-size:12px;font-family:var(--font-mono);padding-left:12px">${i+1}</td>
+      <td><input class="input" value="${t}" oninput="editTableRow(${i},this.value)" placeholder="ชื่อโต๊ะ" style="min-width:120px"></td>
+      <td>
+        <button class="btn-del-row" onclick="deleteTableRow(${i})" title="ลบ">
+          <span class="ico" style="width:15px;height:15px"><svg><use href="#ico-trash"/></svg></span>
+        </button>
+      </td>
+    </tr>`).join("");
+  renderTablesPreview();
+}
+
+function renderTablesPreview() {
+  const el = document.getElementById("tables-preview");
+  if (!el) return;
+  el.innerHTML = editTables.length
+    ? editTables.map(t => `<div class="table-btn" style="cursor:default">${t}</div>`).join("")
+    : '<div style="font-size:12px;color:var(--c-muted)">ยังไม่มีโต๊ะ</div>';
+}
+
+function editTableRow(idx, val) {
+  editTables[idx] = val;
+  renderTablesPreview();
+}
+
+function deleteTableRow(idx) {
+  editTables.splice(idx,1);
+  renderTablesEditTable();
+}
+
+function addTableRow() {
+  editTables.push("");
+  renderTablesEditTable();
+  document.querySelector(".admin-body").scrollTo({top:99999,behavior:"smooth"});
+  // focus last input
+  setTimeout(() => {
+    const inputs = document.querySelectorAll("#tables-edit-body input");
+    if (inputs.length) inputs[inputs.length-1].focus();
+  }, 50);
+}
+
+async function saveTables() {
+  const valid = editTables.map(t=>t.trim()).filter(Boolean);
+  if (new Set(valid).size !== valid.length) { toast("ชื่อโต๊ะซ้ำกัน","error"); return; }
+  try {
+    const res = await api({action:"saveTables", tables:valid});
+    if (res.ok) {
+      editTables = valid;
+      tableList  = valid; // sync to picker
+      toast("บันทึกโต๊ะสำเร็จ!");
+      renderTablesEditTable();
+    } else toast(res.error||"บันทึกไม่สำเร็จ","error");
+  } catch(e) { toast("เกิดข้อผิดพลาด","error"); }
+}
 
 // ── CATEGORY MANAGEMENT ───────────────────────────────────
 function renderCatTags() {
