@@ -59,14 +59,12 @@ body { min-height:100%; display:flex; flex-direction:column; background:var(--c-
 .btn-icon:hover { background:rgba(255,255,255,.1); }
 
 /* ── TABS ────────────────────────────────────────────── */
-.tabs { display:flex; border-bottom:1px solid var(--c-border); background:var(--c-surface); padding:0 12px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
-.tabs::-webkit-scrollbar { display:none; }
+.tabs { display:flex; border-bottom:1px solid var(--c-border); background:var(--c-surface); padding:0 20px; }
 .tab-btn {
-  padding:12px 14px; font-size:13px; font-weight:500; letter-spacing:.04em;
+  padding:12px 18px; font-size:13px; font-weight:500; letter-spacing:.04em;
   border:none; background:none; cursor:pointer; color:var(--c-muted);
   border-bottom:2px solid transparent; margin-bottom:-1px;
   transition:color .15s, border-color .15s;
-  white-space:nowrap; flex-shrink:0; touch-action:manipulation;
 }
 .tab-btn.active { color:var(--c-accent); border-bottom-color:var(--c-accent); }
 
@@ -516,7 +514,7 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
       </button>
     </div>
     <div style="text-align:center;margin-top:14px">
-      <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--c-accent)">1.2.3</span>
+      <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--c-accent)">1.2.4</span>
     </div>
   </div>
 </div>
@@ -714,7 +712,7 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
           <thead>
             <tr>
               <th style="width:32px"></th>
-              <th style="width:60px;text-align:center">รูป</th>
+              <th style="width:56px;text-align:center">รูป</th>
               <th style="min-width:140px">ชื่อเมนู</th>
               <th style="width:90px">ราคา (฿)</th>
               <th style="width:120px">หมวดหมู่</th>
@@ -939,7 +937,7 @@ function mockApi(payload) {
     {name:"เจ้าของ",pin:"9999", role:"admin"},
   ];
   const MOCK_MENU = [
-    {id:"M001",name:"ข้าวผัดกุ้ง",   image:"", nameMm:"ပုဇွန်ကြော်ထမင်း",   price:80, category:"อาหารจานเดียว",active:true},
+    {id:"M001",name:"ข้าวผัดกุ้ง",   nameMm:"ပုဇွန်ကြော်ထမင်း",   price:80, category:"อาหารจานเดียว",active:true},
     {id:"M002",name:"ผัดไทยกุ้งสด",  nameMm:"ပုဇွန်ဖက်ထိုင်းကြော်", price:90, category:"อาหารจานเดียว",active:true},
     {id:"M003",name:"ต้มยำกุ้ง",     nameMm:"ပုဇွန်တမ်ရမ်ဟင်း",     price:120,category:"ต้ม/แกง",      active:true},
     {id:"M004",name:"แกงเขียวหวาน",  nameMm:"အစိမ်းရောင်ကယ်ရီ",     price:100,category:"ต้ม/แกง",      active:true},
@@ -1074,17 +1072,18 @@ async function loadMenu() {
 }
 
 function renderMenu() {
-  const panel = document.getElementById("menu-panel");
-  const cats  = [...new Set(menuItems.map(m => m.category))];
-  let html = "";
-  cats.forEach(cat => {
-    const items = menuItems.filter(m => m.category === cat);
+  var panel = document.getElementById("menu-panel");
+  var cats  = [];
+  menuItems.forEach(function(m){ if (cats.indexOf(m.category)===-1) cats.push(m.category); });
+  var html  = "";
+  cats.forEach(function(cat) {
+    var items = menuItems.filter(function(m){ return m.category===cat; });
     html += "<div class='category-section'><div class='category-title'>" + cat + "</div><div class='menu-grid'>";
-    items.forEach(item => {
-      const qty = cart[item.id] || 0;
-      let card = "<div class='menu-card " + (qty>0?'in-cart':'') + "' id='mc-" + item.id + "' onclick="addToCart('" + item.id + "')">";
-      if (qty > 0) card += "<div class='menu-qty-badge'>" + qty + "</div>";
+    items.forEach(function(item) {
+      var qty  = cart[item.id] || 0;
+      var card = "<div class='menu-card " + (qty>0?'in-cart':'') + "' id='mc-" + item.id + "' data-id='" + item.id + "' onclick='addToCart(this.getAttribute(\"data-id\"))'>";  
       if (item.image) card += "<img src='" + item.image + "' style='width:100%;height:80px;object-fit:cover;border-radius:3px;margin-bottom:6px;display:block'>";
+      if (qty > 0)    card += "<div class='menu-qty-badge'>" + qty + "</div>";
       card += "<div class='menu-name'>" + item.name + "</div>";
       card += "<div class='menu-price'>฿" + item.price + "</div>";
       card += "</div>";
@@ -1289,26 +1288,47 @@ const CATEGORIES = ["อาหารจานเดียว", "ต้ม/แก
 
 function buildMenuRow(idx, item) {
   var catOpts = CATEGORIES.map(function(c){
-    return "<option value='"+c+"'"+(item.category===c?" selected":"")+">"+c+"</option>";
+    return '<option value="' + c + '"' + (item.category===c?' selected':'') + '>' + c + '</option>';
   }).join("");
   if (item.category && CATEGORIES.indexOf(item.category)===-1) {
-    catOpts += "<option value='"+item.category+"' selected>"+item.category+"</option>";
+    catOpts += '<option value="' + item.category + '" selected>' + item.category + '</option>';
   }
-  var imgCell = item.image
-    ? "<div style='position:relative;display:inline-block'><img src='"+item.image+"' style='width:44px;height:44px;object-fit:cover;border-radius:4px;border:1px solid var(--c-border);cursor:pointer' onclick="document.getElementById('img-input-"+idx+"').click()" title='เปลี่ยนรูป'><button onclick="removeMenuImage("+idx+")" style='position:absolute;top:-5px;right:-5px;width:16px;height:16px;border-radius:50%;background:var(--c-red);color:#fff;border:none;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;line-height:1'>x</button></div>"
-    : "<button onclick="document.getElementById('img-input-"+idx+"').click()" style='width:44px;height:44px;border:1.5px dashed var(--c-border2);border-radius:4px;background:transparent;cursor:pointer;color:var(--c-muted);font-size:18px;display:flex;align-items:center;justify-content:center;touch-action:manipulation'>+</button>";
-  imgCell += "<input type='file' id='img-input-"+idx+"' accept='image/*' style='display:none' onchange='handleMenuImage("+idx+",this)'>";
-  var row = "<tr id='mrow-"+idx+"'>";
-  row += "<td style='color:var(--c-muted);font-size:12px;font-family:var(--font-mono);padding-left:12px'>"+(idx+1)+"</td>";
-  row += "<td style='text-align:center'>"+imgCell+"</td>";
-  row += "<td><input class='input' value='"+(item.name||'')+"' oninput="editMenu("+idx+",'name',this.value)" placeholder='ชื่อเมนู' style='min-width:130px'></td>";
-  row += "<td><input class='input' type='number' value='"+(item.price||'')+"' oninput="editMenu("+idx+",'price',this.value)" placeholder='ราคา'></td>";
-  row += "<td><select class='input' style='padding:6px 8px;font-size:13px' onchange="editMenu("+idx+",'category',this.value)">"+catOpts+"</select></td>";
-  row += "<td style='text-align:center'><button class='toggle "+(item.active?'on':'off')+"' id='toggle-"+idx+"' onclick='toggleActive("+idx+")'></button></td>";
-  row += "<td><button class='btn-del-row' onclick='deleteMenuRow("+idx+")' title='ลบ'><span class='ico' style='width:15px;height:15px'><svg><use href="#ico-trash"/></svg></span></button></td>";
+  // Image cell - use data-idx attribute to avoid inline quote issues
+  var hasImg = item.image ? true : false;
+  var imgHtml = hasImg
+    ? '<div style="position:relative;display:inline-block"><img src="' + item.image + '" data-action="img-click" data-idx="' + idx + '" style="width:44px;height:44px;object-fit:cover;border-radius:4px;border:1px solid var(--c-border);cursor:pointer"><button data-action="img-remove" data-idx="' + idx + '" style="position:absolute;top:-5px;right:-5px;width:16px;height:16px;border-radius:50%;background:var(--c-red);color:#fff;border:none;cursor:pointer;font-size:11px;line-height:1">x</button></div>'
+    : '<button data-action="img-click" data-idx="' + idx + '" style="width:44px;height:44px;border:1.5px dashed var(--c-border2);border-radius:4px;background:transparent;cursor:pointer;color:var(--c-muted);font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:manipulation">+</button>';
+  imgHtml += '<input type="file" id="img-input-' + idx + '" accept="image/*" style="display:none" data-action="img-file" data-idx="' + idx + '">';
+  var row = "<tr id='mrow-" + idx + "'>";
+  row += "<td style='color:var(--c-muted);font-size:12px;font-family:var(--font-mono);padding-left:12px'>" + (idx+1) + "</td>";
+  row += "<td style='text-align:center'>" + imgHtml + "</td>";
+  row += "<td><input class='input' value='" + (item.name||'').replace(/'/g,"&#39;") + "' oninput='editMenu(" + idx + ",&quot;name&quot;,this.value)' placeholder='ชื่อเมนู' style='min-width:130px'></td>";
+  row += "<td><input class='input' type='number' value='" + (item.price||'') + "' oninput='editMenu(" + idx + ",&quot;price&quot;,this.value)' placeholder='ราคา'></td>";
+  row += "<td><select class='input' style='padding:6px 8px;font-size:13px' onchange='editMenu(" + idx + ",&quot;category&quot;,this.value)'>" + catOpts + "</select></td>";
+  row += "<td style='text-align:center'><button class='toggle " + (item.active?'on':'off') + "' id='toggle-" + idx + "' onclick='toggleActive(" + idx + ")'></button></td>";
+  row += "<td><button class='btn-del-row' onclick='deleteMenuRow(" + idx + ")' title='ลบ'><span class='ico' style='width:15px;height:15px'><svg><use href='#ico-trash'/></svg></span></button></td>";
   row += "</tr>";
   return row;
 }
+// Image button delegation (avoids inline onclick quote issues)
+document.addEventListener("click", function(e) {
+  var btn = e.target.closest("[data-action]");
+  if (!btn) return;
+  var action = btn.getAttribute("data-action");
+  var idx    = parseInt(btn.getAttribute("data-idx"));
+  if (action === "img-click") {
+    var inp = document.getElementById("img-input-" + idx);
+    if (inp) inp.click();
+  } else if (action === "img-remove") {
+    removeMenuImage(idx);
+  }
+});
+document.addEventListener("change", function(e) {
+  if (e.target.getAttribute("data-action") === "img-file") {
+    var idx = parseInt(e.target.getAttribute("data-idx"));
+    handleMenuImage(idx, e.target);
+  }
+});
 
 function editMenu(idx, key, val) {
   editMenuItems[idx][key] = key === "price" ? Number(val) : val;
@@ -1317,7 +1337,6 @@ function editMenu(idx, key, val) {
 function handleMenuImage(idx, input) {
   var file = input.files[0];
   if (!file) return;
-  // Resize to max 400px before storing as base64
   var reader = new FileReader();
   reader.onload = function(e) {
     var img = new Image();
@@ -1455,10 +1474,7 @@ function renderQRGrid() {
       html += "<div style='background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r);padding:14px;text-align:center'>";
       html += "<img src='" + qrUrl + "' style='width:120px;height:120px;margin-bottom:8px' loading='lazy'>";
       html += "<div style='font-family:var(--font-mono);font-size:15px;font-weight:600;margin-bottom:8px'>โต๊ะ " + t + "</div>";
-      html += "<div style='display:flex;gap:6px;justify-content:center'>";
-      html += "<button onclick='testQR(\"" + t + "\")' style='font-size:11px;padding:4px 8px;background:transparent;border:1px solid var(--c-border2);border-radius:4px;cursor:pointer;touch-action:manipulation;color:var(--c-muted)'>ทดสอบ</button>";
-      html += "<button onclick='printSingleQR(\"" + t + "\")' style='font-size:11px;padding:4px 8px;background:var(--c-text);color:#F5F0E8;border:none;border-radius:4px;cursor:pointer;touch-action:manipulation'>พิมพ์</button>";
-      html += "</div>";
+      html += "<button onclick='testQR(\"" + t + "\")' style='font-size:11px;padding:4px 10px;background:transparent;border:1px solid var(--c-border2);border-radius:4px;cursor:pointer;touch-action:manipulation'>ทดสอบ</button>";
       html += "</div>";
     });
     grid.innerHTML = html;
@@ -1467,36 +1483,7 @@ function renderQRGrid() {
   });
 }
 function testQR(table) { initCustomerView(table); }
-function printAllQR() { window.print(); }
-
-function printSingleQR(table) {
-  var base   = window.location.origin + window.location.pathname;
-  var url    = base + "?table=" + encodeURIComponent(table);
-  var qrUrl  = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(url);
-  var win    = window.open("", "_blank", "width=400,height=500");
-  win.document.write(
-    "<!DOCTYPE html><html><head><meta charset=UTF-8>"
-    + "<title>QR โต๊ะ " + table + "</title>"
-    + "<style>"
-    + "body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'Courier New',monospace;background:#fff}"
-    + ".card{text-align:center;padding:32px;border:2px solid #1C1A17;border-radius:12px;width:280px}"
-    + ".brand{font-size:11px;letter-spacing:.18em;color:#7A7268;margin-bottom:4px}"
-    + ".table-num{font-size:36px;font-weight:700;margin:8px 0 16px}"
-    + ".qr img{width:220px;height:220px}"
-    + ".hint{font-size:11px;color:#7A7268;margin-top:12px;line-height:1.5}"
-    + "@media print{body{min-height:auto}.card{border:2px solid #000}}"
-    + "</style></head><body>"
-    + "<div class=card>"
-    + "<div class=brand>ORDER DESK</div>"
-    + "<div class=table-num>โต๊ะ " + table + "</div>"
-    + "<div class=qr><img src='" + qrUrl + "' alt='QR Code'></div>"
-    + "<div class=hint>สแกน QR เพื่อสั่งอาหาร<br>Scan to order</div>"
-    + "</div>"
-    + "<script>window.onload=function(){window.print();}<\/script>"
-    + "</body></html>"
-  );
-  win.document.close();
-}
+function printAllQR()  { window.print(); }
 
 // ── CUSTOMER VIEW ─────────────────────────────────────────
 var custCart = {};
@@ -1529,11 +1516,10 @@ function renderCustMenu() {
     items.forEach(function(item) {
       var qty    = custCart[item.id] || 0;
       var border = qty > 0 ? "var(--c-accent)" : "var(--c-border)";
-      var card   = "<div style='background:var(--c-surface);border:1.5px solid "+border+";border-radius:var(--r);overflow:hidden;position:relative'>";
-      if (qty > 0) card += "<div style='position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--c-accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;z-index:1'>" + qty + "</div>";
-      if (item.image) card += "<img src='"+item.image+"' style='width:100%;height:100px;object-fit:cover;display:block'>";
-      card += "<div style='padding:10px'>";
-      card += "<div style='font-size:14px;font-weight:500;line-height:1.3;margin-bottom:4px'>" + item.name + "</div>";
+      var card   = "<div style='background:var(--c-surface);border:1.5px solid "+border+";border-radius:var(--r);padding:12px;position:relative'>";
+      if (qty > 0) card += "<div style='position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:50%;background:var(--c-accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center'>" + qty + "</div>";
+      if (item.image) card += "<img src='" + item.image + "' style='width:100%;height:90px;object-fit:cover;border-radius:4px 4px 0 0;display:block;margin:-10px -10px 8px -10px;width:calc(100% + 20px)'>";
+      card += "<div style='font-size:14px;font-weight:500;line-height:1.3;margin-bottom:6px'>" + item.name + "</div>";
       card += "<div style='font-family:var(--font-mono);font-size:13px;color:var(--c-accent);font-weight:500;margin-bottom:8px'>฿" + item.price + "</div>";
       card += "<div style='display:flex;align-items:center;gap:6px'>";
       if (qty > 0) {
@@ -1544,7 +1530,6 @@ function renderCustMenu() {
       var btnCol = qty > 0 ? "#fff" : "var(--c-text)";
       var btnTxt = qty > 0 ? "เพิ่ม" : "+ สั่ง";
       card += "<button onclick='custChangeQty(\""+item.id+"\",1)' style='flex:1;padding:5px;border-radius:4px;border:none;background:"+btnBg+";color:"+btnCol+";font-size:13px;cursor:pointer;touch-action:manipulation'>" + btnTxt + "</button>";
-      card += "</div>";
       card += "</div></div>";
       html += card;
     });
