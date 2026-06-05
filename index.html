@@ -125,6 +125,7 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
 .toast-ok    { border-left:3px solid var(--c-done); }
 .toast-error { border-left:3px solid var(--c-red); }
 @keyframes slideUp { from { transform:translateY(12px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+@keyframes scanProgress { 0%{transform:translateX(-100%)} 50%{transform:translateX(0)} 100%{transform:translateX(100%)} }
 
 /* ── DIVIDER ─────────────────────────────────────────── */
 .divider { height:1px; background:var(--c-border); margin:4px 0; }
@@ -457,6 +458,9 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
   <symbol id="ico-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
   </symbol>
+  <symbol id="ico-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+  </symbol>
   <symbol id="ico-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
     <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
   </symbol>
@@ -506,7 +510,7 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
       </button>
     </div>
     <div style="text-align:center;margin-top:14px">
-      <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--c-border2)">1.0.8</span>
+      <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--c-border2)">1.0.9</span>
     </div>
   </div>
 </div>
@@ -671,13 +675,18 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
     <div id="admin-tab-menu">
       <!-- แถว 1: ปุ่ม action -->
       <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px;gap:6px">
+        <button onclick="openScanModal()"
+          style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;font-size:13px;font-family:var(--font-body);border:1px solid var(--c-cooking);background:#E2F0FE;color:var(--c-cooking);border-radius:var(--r);cursor:pointer;white-space:nowrap;touch-action:manipulation">
+          <span class="ico" style="width:13px;height:13px"><svg><use href="#ico-camera"/></svg></span>
+          สแกนเมนู
+        </button>
         <button onclick="addMenuRow()"
-          style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;font-size:13px;font-family:var(--font-body);border:1px solid var(--c-border2);background:transparent;border-radius:var(--r);cursor:pointer;color:var(--c-text);white-space:nowrap">
+          style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;font-size:13px;font-family:var(--font-body);border:1px solid var(--c-border2);background:transparent;border-radius:var(--r);cursor:pointer;color:var(--c-text);white-space:nowrap;touch-action:manipulation">
           <span class="ico" style="width:13px;height:13px"><svg><use href="#ico-plus"/></svg></span>
           เพิ่มเมนู
         </button>
         <button onclick="saveMenu()"
-          style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;font-size:13px;font-family:var(--font-body);background:var(--c-accent);color:#fff;border:none;border-radius:var(--r);cursor:pointer;white-space:nowrap">
+          style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;font-size:13px;font-family:var(--font-body);background:var(--c-accent);color:#fff;border:none;border-radius:var(--r);cursor:pointer;white-space:nowrap;touch-action:manipulation">
           <span class="ico" style="width:13px;height:13px"><svg><use href="#ico-save"/></svg></span>
           บันทึก
         </button>
@@ -792,6 +801,68 @@ label.field-label { display:block; font-size:12px; font-weight:500; letter-spaci
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  SCAN MENU MODAL                                    -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="scan-modal" onclick="closeScanModal(event)">
+  <div class="modal-sheet" style="max-height:90vh">
+    <div class="modal-header">
+      <span class="modal-title" style="display:flex;align-items:center;gap:8px">
+        <span class="ico" style="width:16px;height:16px;color:var(--c-cooking)"><svg><use href="#ico-camera"/></svg></span>
+        สแกนเมนูจากรูป
+      </span>
+      <button class="modal-close" onclick="closeScanModal()">×</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Upload area -->
+      <div id="scan-upload-area"
+        style="border:2px dashed var(--c-border2);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer;transition:border-color .15s;margin-bottom:14px"
+        onclick="document.getElementById('scan-file-input').click()"
+        ondragover="event.preventDefault();this.style.borderColor='var(--c-cooking)'"
+        ondragleave="this.style.borderColor='var(--c-border2)'"
+        ondrop="handleScanDrop(event)">
+        <div style="margin-bottom:8px">
+          <span class="ico" style="width:32px;height:32px;color:var(--c-muted);display:inline-flex"><svg><use href="#ico-camera"/></svg></span>
+        </div>
+        <div style="font-size:14px;font-weight:500;margin-bottom:4px">แตะเพื่อเลือกรูป หรือถ่ายใหม่</div>
+        <div style="font-size:12px;color:var(--c-muted)">รองรับ JPG, PNG — รูปเมนู, กระดาน, ป้ายราคา</div>
+        <input type="file" id="scan-file-input" accept="image/*" capture="environment"
+          style="display:none" onchange="handleScanFile(this.files[0])">
+      </div>
+
+      <!-- Preview image -->
+      <div id="scan-preview-wrap" style="display:none;margin-bottom:14px;position:relative">
+        <img id="scan-preview-img" style="width:100%;border-radius:var(--r);border:1px solid var(--c-border);max-height:220px;object-fit:cover">
+        <button onclick="clearScanImage()"
+          style="position:absolute;top:6px;right:6px;background:rgba(28,26,23,.7);color:#fff;border:none;border-radius:50%;width:24px;height:24px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation">×</button>
+      </div>
+
+      <!-- Scan result -->
+      <div id="scan-result-wrap" style="display:none">
+        <div style="font-size:12px;font-weight:500;letter-spacing:.06em;color:var(--c-muted);margin-bottom:8px">รายการที่พบ — ติ๊กเพื่อนำเข้า</div>
+        <div id="scan-result-list"></div>
+      </div>
+
+      <!-- Loading -->
+      <div id="scan-loading" style="display:none;text-align:center;padding:24px">
+        <div style="font-size:13px;color:var(--c-muted)">กำลังวิเคราะห์รูป...</div>
+        <div style="margin-top:8px;height:3px;background:var(--c-border);border-radius:2px;overflow:hidden">
+          <div style="height:100%;background:var(--c-cooking);animation:scanProgress 1.5s ease-in-out infinite"></div>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer" id="scan-footer" style="display:none;padding:12px 18px;border-top:1px solid var(--c-border)">
+      <button onclick="importScannedMenu()"
+        style="width:100%;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px;font-size:14px;font-family:var(--font-body);background:var(--c-accent);color:#fff;border:none;border-radius:var(--r);cursor:pointer;touch-action:manipulation;font-weight:500">
+        <span class="ico" style="width:15px;height:15px"><svg><use href="#ico-plus"/></svg></span>
+        นำเข้าเมนูที่เลือก
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1515,6 +1586,152 @@ async function saveTables() {
       renderTablesPreview();
     } else toast(res.error||"บันทึกไม่สำเร็จ","error");
   } catch(e) { toast("เกิดข้อผิดพลาด","error"); }
+}
+
+
+// ── SCAN MENU FROM IMAGE ──────────────────────────────────
+let scanImageBase64 = null;
+let scannedItems    = [];
+
+function openScanModal() {
+  clearScanImage();
+  document.getElementById("scan-result-wrap").style.display = "none";
+  document.getElementById("scan-footer").style.display = "none";
+  document.getElementById("scan-loading").style.display = "none";
+  document.getElementById("scan-modal").classList.add("open");
+}
+function closeScanModal(e) {
+  if (e && e.target !== document.getElementById("scan-modal")) return;
+  document.getElementById("scan-modal").classList.remove("open");
+}
+function clearScanImage() {
+  scanImageBase64 = null;
+  document.getElementById("scan-preview-wrap").style.display = "none";
+  document.getElementById("scan-upload-area").style.display = "block";
+  document.getElementById("scan-result-wrap").style.display = "none";
+  document.getElementById("scan-footer").style.display = "none";
+  document.getElementById("scan-file-input").value = "";
+}
+
+function handleScanDrop(e) {
+  e.preventDefault();
+  document.getElementById("scan-upload-area").style.borderColor = "var(--c-border2)";
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith("image/")) handleScanFile(file);
+}
+
+function handleScanFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    scanImageBase64 = dataUrl.split(",")[1];
+    // Show preview
+    document.getElementById("scan-preview-img").src = dataUrl;
+    document.getElementById("scan-preview-wrap").style.display = "block";
+    document.getElementById("scan-upload-area").style.display = "none";
+    // Auto-scan
+    analyzeScanImage();
+  };
+  reader.readAsDataURL(file);
+}
+
+async function analyzeScanImage() {
+  if (!scanImageBase64) return;
+  document.getElementById("scan-loading").style.display = "block";
+  document.getElementById("scan-result-wrap").style.display = "none";
+  document.getElementById("scan-footer").style.display = "none";
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: { type: "base64", media_type: "image/jpeg", data: scanImageBase64 }
+            },
+            {
+              type: "text",
+              text: `วิเคราะห์รูปนี้แล้วหารายการอาหารและราคา ตอบกลับเป็น JSON array เท่านั้น ห้ามมีคำอธิบาย ห้ามมี backtick
+format: [{"name":"ชื่อเมนู","price":ราคาเป็นตัวเลข,"category":"หมวดหมู่ที่เหมาะสม"}]
+หมวดหมู่ให้เลือกจาก: อาหารจานเดียว, ต้ม/แกง, ทอด/ผัด, ยำ/ลาบ, เครื่องดื่ม, ของหวาน
+ถ้าไม่พบราคาให้ใส่ 0
+ถ้าไม่มีรายการอาหารในรูปให้ตอบ []`
+            }
+          ]
+        }]
+      })
+    });
+
+    const data = await res.json();
+    const text = (data.content||[]).map(c=>c.text||"").join("").trim().replace(/```json|```/g,"").trim();
+    scannedItems = JSON.parse(text);
+
+    document.getElementById("scan-loading").style.display = "none";
+
+    if (!scannedItems.length) {
+      document.getElementById("scan-result-list").innerHTML =
+        '<div style="text-align:center;padding:20px;color:var(--c-muted);font-size:13px">ไม่พบรายการอาหารในรูป<br>ลองถ่ายรูปใหม่ให้เห็นชื่อและราคาชัดขึ้น</div>';
+      document.getElementById("scan-result-wrap").style.display = "block";
+      return;
+    }
+
+    renderScanResults();
+    document.getElementById("scan-result-wrap").style.display = "block";
+    document.getElementById("scan-footer").style.display = "block";
+
+  } catch(e) {
+    document.getElementById("scan-loading").style.display = "none";
+    document.getElementById("scan-result-list").innerHTML =
+      '<div style="text-align:center;padding:20px;color:var(--c-red);font-size:13px">วิเคราะห์ไม่สำเร็จ กรุณาลองใหม่</div>';
+    document.getElementById("scan-result-wrap").style.display = "block";
+  }
+}
+
+function renderScanResults() {
+  const list = document.getElementById("scan-result-list");
+  list.innerHTML = scannedItems.map((item,i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--c-border);border-radius:var(--r);margin-bottom:6px;background:var(--c-surface)">
+      <input type="checkbox" id="scan-chk-${i}" checked style="width:16px;height:16px;accent-color:var(--c-accent);flex-shrink:0">
+      <div style="flex:1;min-width:0">
+        <input class="input" value="${item.name}" oninput="scannedItems[${i}].name=this.value"
+          style="font-size:13px;padding:5px 8px;margin-bottom:4px">
+        <div style="display:flex;gap:6px">
+          <input class="input" type="number" value="${item.price}" oninput="scannedItems[${i}].price=Number(this.value)"
+            style="font-size:13px;padding:5px 8px;width:90px;font-family:var(--font-mono)"
+            placeholder="ราคา">
+          <select class="input" onchange="scannedItems[${i}].category=this.value"
+            style="font-size:12px;padding:5px 8px;flex:1">
+            ${CATEGORIES.map(c=>`<option value="${c}" ${item.category===c?'selected':''}>${c}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    </div>`).join("");
+}
+
+function importScannedMenu() {
+  const selected = scannedItems.filter((_,i) => {
+    const chk = document.getElementById("scan-chk-"+i);
+    return chk && chk.checked;
+  });
+  if (!selected.length) { toast("ไม่ได้เลือกรายการ","error"); return; }
+
+  selected.forEach(item => {
+    editMenuItems.push({
+      id: "", name: item.name, price: item.price||0,
+      category: item.category||CATEGORIES[0], active: true
+    });
+  });
+  renderMenuEditTable(editMenuItems);
+  closeScanModal();
+  toast("นำเข้า " + selected.length + " รายการแล้ว!");
+  document.querySelector(".admin-body").scrollTo({top:99999,behavior:"smooth"});
 }
 
 // ── CATEGORY MANAGEMENT ───────────────────────────────────
